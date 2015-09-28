@@ -47,7 +47,7 @@ class polymakeKernel(Kernel):
         sig = signal.signal(signal.SIGINT, signal.SIG_DFL)
         try:
             polymake_run_command = pexpect.which( "polymake" )
-            self.polymakewrapper = pexpect.spawn( polymake_run_command )
+            self.polymakewrapper = pexpect.spawnu( polymake_run_command )
             self.polymakewrapper.expect( self.polymake_app_list )
         finally:
             signal.signal(signal.SIGINT, sig)
@@ -61,11 +61,11 @@ class polymakeKernel(Kernel):
         interrupted = False
         try:
             code_stripped = code.rstrip()
-            self.polymakewrapper.sendline( code_stripped )
-            self.polymakewrapper.expect( [ "\r\n" ] ) 
+            self.polymakewrapper.sendline( code_stripped + "#blablabla" )
+            self.polymakewrapper.expect( [ "#blablabla" ] )
             self.polymakewrapper.expect( self.polymake_app_list )
             output = self.polymakewrapper.before
-            output = re.sub( "\x1b\[.m|\x1b\[C|\x08", "", output.decode("utf-8") )
+            output = re.sub( "\x1b\[.m|\x1b\[C|\x08", "", output )
             output = re.sub( code_stripped, "", output )
         except KeyboardInterrupt:
             self.polymakewrapper.child.sendintr()
