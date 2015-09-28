@@ -4,9 +4,9 @@ Jupyter kernels for polymake
 This is an alpha version of a jupyter kernel for polymake. All of this is non-finished and might not work,
 depending on your OS, libs, etc.
 
-## wrapper-kernel
+## polymake-kernel
 
-The `wrapper-kernel' is a Jupyter kernel based on the [bash wrapper kernel](https://github.com/takluyver/bash_kernel),
+The `polymake-kernel` is a Jupyter kernel based on the [bash wrapper kernel](https://github.com/takluyver/bash_kernel),
 to install
 
 ```shell
@@ -22,4 +22,4 @@ To use it, use one of the following:
     ipython console --kernel polymake
 ```
 
-Note that this kernel assumes that `polymake' is in the `PATH'.
+Note that this kernel assumes that `polymake` is in the `PATH`.
