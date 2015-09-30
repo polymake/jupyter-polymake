@@ -61,8 +61,8 @@ class polymakeKernel(Kernel):
         interrupted = False
         try:
             code_stripped = code.rstrip()
-            self.polymakewrapper.sendline( code_stripped + "#blablabla" )
-            self.polymakewrapper.expect( [ "#blablabla" ] )
+            self.polymakewrapper.sendline( code_stripped + "#polymake_jupyter_comment" )
+            self.polymakewrapper.expect( [ "#polymake_jupyter_comment" ] )
             self.polymakewrapper.expect( self.polymake_app_list )
             output = self.polymakewrapper.before
             output = re.sub( "\x1b\[.m|\x1b\[C|\x08", "", output )
