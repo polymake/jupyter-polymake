@@ -19,7 +19,10 @@ class polymakeKernel(Kernel):
     implementation = 'jupyter_polymake_wrapper'
     implementation_version = __version__
     
-    polymake_app_list = [ "common >", "fan >", "fulton >", "graph >", "group >", "ideal >", "matroid >", "polytope >", "topaz >", "tropical >" ]
+    polymake_app_list = [ "common >", "fan >", "fulton >", "graph >", "group >", "ideal >", "matroid >", "polytope >", "topaz >", "tropical >",
+                          "common (.*)>", "fan (.*)>", "fulton (.*)>", "graph (.*)>", "group (.*)>", "ideal (.*)>", "matroid (.*)>", "polytope (.*)>", "topaz (.*)>", "tropical (.*)>"  ]
+    
+    polymake_normal_app_nr = 10
 
     @property
     def language_version(self):
@@ -59,28 +62,39 @@ class polymakeKernel(Kernel):
                     'payload': [], 'user_expressions': {}}
 
         interrupted = False
-        try:
-            code_stripped = code.rstrip()
-            self.polymakewrapper.sendline( code_stripped + "#polymake_jupyter_comment" )
-            self.polymakewrapper.expect( [ "#polymake_jupyter_comment" ] )
-            self.polymakewrapper.expect( self.polymake_app_list )
-            output = self.polymakewrapper.before
-            output = re.sub( "\x1b\[.m|\x1b\[C|\x08", "", output )
-            output = re.sub( code_stripped, "", output )
-        except KeyboardInterrupt:
-            self.polymakewrapper.child.sendintr()
-            interrupted = True
-            self.polymakewrapper.expect( self.polymake_app_list )
-            output = self.polymakewrapper.before
-        except EOF:
-            output = self.polymakewrapper.before + 'Restarting polymake'
-            self._start_polymake()
-
-        if not silent:
-            # Send standard output
-            stream_content = {'name': 'stdout', 'text': output}
-            self.send_response(self.iopub_socket, 'stream', stream_content)
-
+        code_list=code.split("\n")
+        len_code_list = len(code_list)
+        
+        for code_nr in range(0,len_code_list):
+            try:
+                code=code_list[code_nr]
+                code_stripped = code.rstrip()
+                self.polymakewrapper.sendline( code_stripped + "#polymake_jupyter_comment" )
+                self.polymakewrapper.expect( [ "#polymake_jupyter_comment" ] )
+                out_nr = self.polymakewrapper.expect( self.polymake_app_list )
+                if out_nr >= 10 and code_nr == len_code_list-1:
+                    output = "incomplete input"
+                    self.polymakewrapper.sendline( "\r\n;" )
+                    self.polymakewrapper.expect( self.polymake_app_list )
+                else:
+                    output_tmp = self.polymakewrapper.before
+                    output_tmp = re.sub( "\x1b\[.m|\x1b\[C|\x08", "", output_tmp )
+                    output = re.sub( code_stripped, "", output_tmp )
+                    output = output.strip() 
+            except KeyboardInterrupt:
+                self.polymakewrapper.child.sendintr()
+                interrupted = True
+                self.polymakewrapper.expect( self.polymake_app_list )
+                output = self.polymakewrapper.before
+            except EOF:
+                output = self.polymakewrapper.before + 'Restarting polymake'
+                self._start_polymake()
+            
+            if not silent:
+                if output != '':
+                    stream_content = {'name': 'stdout', 'text': output}
+                    self.send_response(self.iopub_socket, 'stream', stream_content)
+        
         if interrupted:
             return {'status': 'abort', 'execution_count': self.execution_count}
 
@@ -95,6 +109,12 @@ class polymakeKernel(Kernel):
         else:
             return {'status': 'ok', 'execution_count': self.execution_count,
                     'payload': [], 'user_expressions': {}}
+    
+    def do_shutdown(self, restart):
+        
+        self.polymakewrapper.terminate(True)
+        if restart:
+            _start_polymake()
 
     # This is a rather poor completion at the moment
     def do_complete(self, code, cursor_pos):
