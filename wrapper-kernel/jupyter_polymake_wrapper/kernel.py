@@ -78,8 +78,7 @@ class polymakeKernel(Kernel):
                     self.polymakewrapper.expect( self.polymake_app_list )
                 else:
                     output_tmp = self.polymakewrapper.before
-                    output_tmp = re.sub( "\x1b\[.m|\x1b\[C|\x08", "", output_tmp )
-                    output = re.sub( code_stripped, "", output_tmp )
+                    output = re.sub( "\x1b\[.m|\x1b\[C|\x08", "", output_tmp )
                     output = output.strip() 
             except KeyboardInterrupt:
                 self.polymakewrapper.child.sendintr()
