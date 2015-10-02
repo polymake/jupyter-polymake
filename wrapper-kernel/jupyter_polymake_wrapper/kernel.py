@@ -65,10 +65,22 @@ class polymakeKernel(Kernel):
         code_list=code.split("\n")
         len_code_list = len(code_list)
         
+        for i in range(0,len_code_list):
+            code_list[i] = code_list[i].strip()
+        
+        if code_list[0] == "@print_as_javascript":
+            code_list = code_list[1:]
+            len_code_list = len_code_list - 1
+            display_as_html = True
+        else:
+            stream_content_type='text'
+            display_as_html = False
+        
         for code_nr in range(0,len_code_list):
             try:
                 code=code_list[code_nr]
                 code_stripped = code.rstrip()
+                self.send_response(self.iopub_socket, 'stream', {'name': 'stdout', 'text': "Code: " + code} )
                 self.polymakewrapper.sendline( code_stripped + "#polymake_jupyter_comment" )
                 self.polymakewrapper.expect( [ "#polymake_jupyter_comment" ] )
                 out_nr = self.polymakewrapper.expect( self.polymake_app_list )
@@ -89,10 +101,16 @@ class polymakeKernel(Kernel):
                 output = self.polymakewrapper.before + 'Restarting polymake'
                 self._start_polymake()
             
-            if not silent:
+            if not silent and not display_as_html:
                 if output != '':
                     stream_content = {'name': 'stdout', 'text': output}
                     self.send_response(self.iopub_socket, 'stream', stream_content)
+            elif not silent and display_as_html:
+                self.send_response(self.iopub_socket, 'stream', {'name': 'stdout', 'text': output} )
+                stream_content = { 'source': "polymake",
+                                   'data': { 'text/html': output },
+                                   'metadata': dict() }
+                self.send_response(self.iopub_socket, 'display_data', stream_content)
         
         if interrupted:
             return {'status': 'abort', 'execution_count': self.execution_count}
