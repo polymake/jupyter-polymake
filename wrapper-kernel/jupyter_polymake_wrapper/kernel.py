@@ -52,6 +52,7 @@ class polymakeKernel(Kernel):
             polymake_run_command = pexpect.which( "polymake" )
             self.polymakewrapper = pexpect.spawnu( polymake_run_command )
             self.polymakewrapper.expect( self.polymake_app_list )
+            self.polymakewrapper.setwinsize(400,400)
         finally:
             signal.signal(signal.SIGINT, sig)
 
