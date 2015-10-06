@@ -116,10 +116,32 @@ class polymakeKernel(Kernel):
         if restart:
             _start_polymake()
 
+
+### basic code completion for polymake
+### currently known shortcomings: intermediate completion, in particular for files, completion of variable names
+
+    def code_completion (self,code):
+        completion = []
+        code = re.sub( "\)$", "", code)
+        code_line = 'print jupyter_tab_completion(\'' + code + '\');'
+        self.polymakewrapper.sendline( code_line + "#polymake_jupyter_comment" )
+        self.polymakewrapper.expect( [ "[ \r]*#[ \r]*p[ \r]*o[ \r]*l[ \r]*y[ \r]*m[ \r]*a[ \r]*k[ \r]*e[ \r]*_[ \r]*j[ \r]*u[ \r]*p[ \r]*y[ \r]*t[ \r]*e[ \r]*r[ \r]*_[ \r]*c[ \r]*o[ \r]*m[ \r]*m[ \r]*e[ \r]*n[ \r]*t" ] )
+        self.polymakewrapper.expect( self.polymake_app_list )
+        output_tmp = self.polymakewrapper.before
+        output_tmp = re.sub( "^\r\n", "", output_tmp )
+        output_tmp = re.sub( "\r\x1b\[A\r\n", "", output_tmp )
+        output = re.sub( "\r\n\x1b\[1m", "", output_tmp )
+        completion = output.split("###")
+        completion_length = completion.pop(0)
+        return (completion_length,completion)
+
     # This is a rather poor completion at the moment
     def do_complete(self, code, cursor_pos):
 
-        return {'matches': [ ], 'cursor_start': 0,
+        completion_length, completion = self.code_completion(code)
+        cur_start = cursor_pos - int(completion_length)
+        
+        return {'matches':  completion, 'cursor_start': cur_start,
                 'cursor_end': cursor_pos, 'metadata': dict(),
                 'status': 'ok'}
 
