@@ -106,7 +106,7 @@ class polymakeKernel(Kernel):
                     stream_content = {'name': 'stdout', 'text': output}
                     self.send_response(self.iopub_socket, 'stream', stream_content)
             elif not silent and display_as_html:
-                self.send_response(self.iopub_socket, 'stream', {'name': 'stdout', 'text': output} )
+                #self.send_response(self.iopub_socket, 'stream', {'name': 'stdout', 'text': output} )
                 stream_content = { 'source': "polymake",
                                    'data': { 'text/html': output },
                                    'metadata': dict() }

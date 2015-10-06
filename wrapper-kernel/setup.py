@@ -10,5 +10,6 @@ setup( name="jupyter_polymake_wrapper"
      , url="https://github.com/sebasguts/jupyter-polymake"
      , packages=["jupyter_polymake_wrapper"]
      , package_dir={"jupyter_polymake_wrapper": "jupyter_polymake_wrapper"}
+     , package_data={ "jupyter_polymake_wrapper": [ "js" ]}
      ,
      )
