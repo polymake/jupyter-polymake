@@ -123,8 +123,9 @@ class polymakeKernel(Kernel):
     def code_completion (self,code):
         completion = []
         code = re.sub( "\)$", "", code)
-        code_line = 'print jupyter_tab_completion(\'' + code + '\');'
-        self.polymakewrapper.sendline( code_line + "#polymake_jupyter_comment" )
+        code = repr(code)
+        code_line = 'print jupyter_tab_completion(' + code + ');  #polymake_jupyter_comment'
+        self.polymakewrapper.sendline( code_line )
         self.polymakewrapper.expect( [ "[ \r]*#[ \r]*p[ \r]*o[ \r]*l[ \r]*y[ \r]*m[ \r]*a[ \r]*k[ \r]*e[ \r]*_[ \r]*j[ \r]*u[ \r]*p[ \r]*y[ \r]*t[ \r]*e[ \r]*r[ \r]*_[ \r]*c[ \r]*o[ \r]*m[ \r]*m[ \r]*e[ \r]*n[ \r]*t" ] )
         self.polymakewrapper.expect( self.polymake_app_list )
         output_tmp = self.polymakewrapper.before
