@@ -19,9 +19,6 @@ class polymakeKernel(Kernel):
     implementation = 'jupyter_polymake_wrapper'
     implementation_version = __version__
     
-    polymake_app_list = [ "common >", "fan >", "fulton >", "graph >", "group >", "ideal >", "matroid >", "polytope >", "topaz >", "tropical >",
-                          "common (.*)>", "fan (.*)>", "fulton (.*)>", "graph (.*)>", "group (.*)>", "ideal (.*)>", "matroid (.*)>", "polytope (.*)>", "topaz (.*)>", "tropical (.*)>"  ]
-    
     polymake_normal_app_nr = 10
 
     @property
@@ -38,9 +35,9 @@ class polymakeKernel(Kernel):
         return self._banner
 
     language_info = {'name': 'polymake',
-                     'codemirror_mode': 'polymake', # note that this does not exist yet
-                     'mimetype': 'text/x-polymake',
-                     'file_extension': '.polymake'}
+                     'codemirror_mode': 'polymake', # FIXME: Maybe use pearl?
+                     'mimetype': 'text/x-polymake', 
+                     'file_extension': '.polymake'} # FIXME: Is this even real?
 
     def __init__(self, **kwargs):
         Kernel.__init__(self, **kwargs)
@@ -50,8 +47,8 @@ class polymakeKernel(Kernel):
         sig = signal.signal(signal.SIGINT, signal.SIG_DFL)
         try:
             polymake_run_command = pexpect.which( "polymake" )
-            self.polymakewrapper = pexpect.spawnu( polymake_run_command )
-            self.polymakewrapper.expect( self.polymake_app_list )
+            self.polymakewrapper = pexpect.spawn( polymake_run_command + " --terminal=jupyter" )
+            self.polymakewrapper.expect( "JUPYTER_PROMT>")
             self.polymakewrapper.setwinsize(400,400)
         finally:
             signal.signal(signal.SIGINT, sig)
@@ -67,51 +64,38 @@ class polymakeKernel(Kernel):
         len_code_list = len(code_list)
         
         for i in range(0,len_code_list):
-            code_list[i] = code_list[i].strip()
-        
-        if code_list[0] == "@print_as_javascript":
-            code_list = code_list[1:]
-            len_code_list = len_code_list - 1
-            display_as_html = True
-        else:
-            stream_content_type='text'
-            display_as_html = False
+            code_list[i] = code_list[i].strip().rstrip()
         
         for code_nr in range(0,len_code_list):
             try:
                 code=code_list[code_nr]
-                code_stripped = code.rstrip()
-                self.send_response(self.iopub_socket, 'stream', {'name': 'stdout', 'text': "Code: " + code} )
-                self.polymakewrapper.sendline( code_stripped + "#polymake_jupyter_comment" )
-                self.polymakewrapper.expect( [ "#polymake_jupyter_comment" ] )
-                out_nr = self.polymakewrapper.expect( self.polymake_app_list )
-                if out_nr >= 10 and code_nr == len_code_list-1:
-                    output = "incomplete input"
-                    self.polymakewrapper.sendline( "\r\n;" )
-                    self.polymakewrapper.expect( self.polymake_app_list )
-                else:
-                    output_tmp = self.polymakewrapper.before
-                    output = re.sub( "\x1b\[.m|\x1b\[C|\x08", "", output_tmp )
-                    output = output.strip() 
+                self.polymakewrapper.sendline( code_stripped )
+                self.polymakewrapper.expect( code_stripped )
+                output = self.polymakewrapper.expect( "JUPYTER_PROMT>" )
             except KeyboardInterrupt:
                 self.polymakewrapper.child.sendintr()
                 interrupted = True
-                self.polymakewrapper.expect( self.polymake_app_list )
+                self.polymakewrapper.expect( "JUPYTER_PROMT>" )
                 output = self.polymakewrapper.before
             except EOF:
                 output = self.polymakewrapper.before + 'Restarting polymake'
                 self._start_polymake()
-            
-            if not silent and not display_as_html:
-                if output != '':
-                    stream_content = {'name': 'stdout', 'text': output}
-                    self.send_response(self.iopub_socket, 'stream', stream_content)
-            elif not silent and display_as_html:
-                #self.send_response(self.iopub_socket, 'stream', {'name': 'stdout', 'text': output} )
-                stream_content = { 'source': "polymake",
-                                   'data': { 'text/html': output },
-                                   'metadata': dict() }
-                self.send_response(self.iopub_socket, 'display_data', stream_content)
+            if not silent:
+                if output.find( ".@@HTML@@" ) == 0:
+                    output = output[8:]
+                    stream_content = {'execution_count': self.execution_count,
+                                      'source' : "polymake",
+                                      'data': { 'text/html': output},
+                                      'metadata': dict() }
+                    self.send_response( self.iopub_socket, 'display_data', stream_content )
+                elif output.find( ".@@JPEG@@" ) == 0:
+                        stream_content = { 'source' : 'singular',
+                                           'data': { 'image/jpeg': output[8:] },
+                                           'metadata': { 'image/jpeg' : { 'width': 400, 'height': 400 } } } ##FIXME: Metadata
+                    self.send_response(self.iopub_socket, 'display_data', stream_content)
+                elif output != 0:
+                    stream_content = {'execution_count': self.execution_count, 'data': { 'text/plain': output } }
+                    self.send_response( self.iopub_socket, 'execute_result', stream_content )
         
         if interrupted:
             return {'status': 'abort', 'execution_count': self.execution_count}
