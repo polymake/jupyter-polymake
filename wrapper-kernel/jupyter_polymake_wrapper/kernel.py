@@ -81,16 +81,19 @@ class polymakeKernel(Kernel):
                 output = self.polymakewrapper.before + 'Restarting polymake'
                 self._start_polymake()
             if not silent:
-                if output.find( ".@@HTML@@" ) == 0:
-                    output = output[8:]
+                html_position = output.find( ".@@HTML@@" )
+                jpeg_position = output.find( ".@@JPEG@@" )
+                if html_position != -1:
+                    output = output[html_position + 9:]
                     stream_content = {'execution_count': self.execution_count,
                                       'source' : "polymake",
                                       'data': { 'text/html': output},
                                       'metadata': dict() }
                     self.send_response( self.iopub_socket, 'display_data', stream_content )
-                elif output.find( ".@@JPEG@@" ) == 0:
-                        stream_content = { 'source' : 'singular',
-                                           'data': { 'image/jpeg': output[8:] },
+                elif jpeg_position != -1:
+                    output = output[jpeg_position + 9:]
+                    stream_content = { 'source' : 'singular',
+                                           'data': { 'image/jpeg': output },
                                            'metadata': { 'image/jpeg' : { 'width': 400, 'height': 400 } } } ##FIXME: Metadata
                     self.send_response(self.iopub_socket, 'display_data', stream_content)
                 elif output != 0:
