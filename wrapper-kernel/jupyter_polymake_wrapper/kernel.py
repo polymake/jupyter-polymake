@@ -96,7 +96,7 @@ class polymakeKernel(Kernel):
             
             ## set jupyter enviroment in polymake
             self.polymakewrapper.sendline( 'prefer "threejs";' )
-            self.polymakewrapper.sendline( 'include "common::jupyter.rules;' )
+            self.polymakewrapper.sendline( 'include "common::jupyter.rules";' )
             self.polymakewrapper.sendline( '$common::is_used_in_jupyter = 1;' )
             self.polymakewrapper.sendline( "##polymake_jupyter_start" )
             
@@ -202,3 +202,16 @@ class polymakeKernel(Kernel):
         return {'matches':  completion, 'cursor_start': cur_start,
                 'cursor_end': cursor_pos, 'metadata': dict(),
                 'status': 'ok'}
+
+    def do_is_complete( self, code ):
+        new_code = 'if(0){ ' + code + ' } ' + 'print "===endofoutput===";'
+        self.polymakewrapper.sendline( new_code )
+        self.polymakewrapper.expect( 'print "===endofoutput===";' )
+        return_value=self.polymakewrapper.expect( [ 'Error', '===endofoutput===' ] )
+        if return_value == 0:
+            self.polymakewrapper.sendline( 'print "===endofoutput===";' )
+            self.polymakewrapper.expect( 'print "===endofoutput===";' )
+            self.polymakewrapper.expect( '===endofoutput===' )
+            return {'status' : 'incomplete', 'indent': '' }
+        else:
+            return {'status' : 'complete' }
