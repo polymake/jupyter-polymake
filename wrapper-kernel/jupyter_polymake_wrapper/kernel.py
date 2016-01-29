@@ -221,3 +221,14 @@ class polymakeKernel(Kernel):
             return {'status' : 'incomplete', 'indent': '' }
         else:
             return {'status' : 'complete' }
+
+    def do_inspect( self, code, cursor_pos, detail_level=0 ):
+        new_code = 'Jupyter::context_help( "' + code + '", ' + str(detail_level) + ' ); print "===endofoutput===";'
+        self.polymakewrapper.sendline( new_code )
+        self.polymakewrapper.expect( 'print "===endofoutput===";' )
+        self.polymakewrapper.expect( '===endofoutput===' )
+        output = self.polymakewrapper.before.strip().rstrip()
+        if output == '':
+            return {'status': 'ok', 'data': {}, 'metadata': {}, 'found': False}
+        else:
+            return {'status': 'ok', 'data': { 'text/plain': output }, 'metadata': {}, 'found': True}
