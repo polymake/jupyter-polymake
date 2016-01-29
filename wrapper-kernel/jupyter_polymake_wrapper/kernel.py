@@ -93,9 +93,13 @@ class polymakeKernel(Kernel):
         try:
             polymake_run_command = pexpect.which( "polymake" )
             self.polymakewrapper = pexpect.spawnu( polymake_run_command + " -" )
+            
+            ## set jupyter enviroment in polymake
             self.polymakewrapper.sendline( 'prefer "threejs";' )
-            self.polymakewrapper.sendline( '$is_used_in_jupyter = 1;' )
+            self.polymakewrapper.sendline( 'include "common::jupyter.rules;' )
+            self.polymakewrapper.sendline( '$common::is_used_in_jupyter = 1;' )
             self.polymakewrapper.sendline( "##polymake_jupyter_start" )
+            
             self.polymakewrapper.expect( "##polymake_jupyter_start")
         finally:
             signal.signal(signal.SIGINT, sig)
@@ -158,7 +162,7 @@ class polymakeKernel(Kernel):
             exitcode = 0
         except Exception:
             exitcode = 1
-
+        
         if exitcode:
             return {'status': 'error', 'execution_count': self.execution_count,
                     'ename': '', 'evalue': str(exitcode), 'traceback': []}
@@ -191,7 +195,7 @@ class polymakeKernel(Kernel):
 
     # This is a rather poor completion at the moment
     def do_complete(self, code, cursor_pos):
-
+        
         completion_length, completion = self.code_completion(code)
         cur_start = cursor_pos - int(completion_length)
         
