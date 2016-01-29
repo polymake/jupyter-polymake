@@ -93,8 +93,7 @@ class polymakeKernel(Kernel):
         try:
             polymake_run_command = pexpect.which( "polymake" )
             self.polymakewrapper = pexpect.spawnu( polymake_run_command + " -" )
-            
-            ## set jupyter enviroment in polymake
+            # set jupyter enviroment in polymake
             self.polymakewrapper.sendline( 'prefer "threejs";' )
             self.polymakewrapper.sendline( 'include "common::jupyter.rules";' )
             self.polymakewrapper.sendline( '$common::is_used_in_jupyter = 1;' )
@@ -184,11 +183,11 @@ class polymakeKernel(Kernel):
         completion = []
         code = re.sub( "\)$", "", code)
         code = repr(code)
-        code_line = 'print jupyter_tab_completion(' + code + '); ' + 'print "===endofoutput===";'
+        code_line = 'print Jupyter::tab_completion(' + code + '); ' + 'print "===endofoutput===";'
         self.polymakewrapper.sendline( code_line )
         self.polymakewrapper.expect( 'print "===endofoutput===";' )
         self.polymakewrapper.expect( "===endofoutput===" )
-        output = self.polymakewrapper.before
+        output = self.polymakewrapper.before.strip().rstrip()
         completion = output.split("###")
         completion_length = completion.pop(0)
         return (completion_length,completion)
@@ -196,7 +195,7 @@ class polymakeKernel(Kernel):
     # This is a rather poor completion at the moment
     def do_complete(self, code, cursor_pos):
         
-        completion_length, completion = self.code_completion(code)
+        completion_length, completion = self.code_completion(code[0:cursor_pos])
         cur_start = cursor_pos - int(completion_length)
         
         return {'matches':  completion, 'cursor_start': cur_start,
