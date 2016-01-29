@@ -47,9 +47,9 @@ class polymakeKernel(Kernel):
         sig = signal.signal(signal.SIGINT, signal.SIG_DFL)
         try:
             polymake_run_command = pexpect.which( "polymake" )
-            self.polymakewrapper = pexpect.spawn( polymake_run_command + " --terminal=jupyter" )
-            self.polymakewrapper.expect( "JUPYTER_PROMT>")
-            self.polymakewrapper.setwinsize(400,400)
+            self.polymakewrapper = pexpect.spawnu( polymake_run_command + " -" )
+            self.polymakewrapper.sendline( "##polymake_jupyter_start" )
+            self.polymakewrapper.expect( "##polymake_jupyter_start")
         finally:
             signal.signal(signal.SIGINT, sig)
 
@@ -60,45 +60,38 @@ class polymakeKernel(Kernel):
                     'payload': [], 'user_expressions': {}}
 
         interrupted = False
-        code_list=code.split("\n")
-        len_code_list = len(code_list)
+        code_to_execute=code.rstrip() + '; ' + 'print "===endofoutput===";'
         
-        for i in range(0,len_code_list):
-            code_list[i] = code_list[i].strip().rstrip()
+        #stream_content = {'execution_count': self.execution_count, 'data': { 'text/plain': "Code:\n" + code_to_execute } }
+        #self.send_response( self.iopub_socket, 'execute_result', stream_content )
         
-        for code_nr in range(0,len_code_list):
-            try:
-                code=code_list[code_nr]
-                self.polymakewrapper.sendline( code_stripped )
-                self.polymakewrapper.expect( code_stripped )
-                output = self.polymakewrapper.expect( "JUPYTER_PROMT>" )
-            except KeyboardInterrupt:
-                self.polymakewrapper.child.sendintr()
-                interrupted = True
-                self.polymakewrapper.expect( "JUPYTER_PROMT>" )
-                output = self.polymakewrapper.before
-            except EOF:
-                output = self.polymakewrapper.before + 'Restarting polymake'
-                self._start_polymake()
-            if not silent:
-                html_position = output.find( ".@@HTML@@" )
-                jpeg_position = output.find( ".@@JPEG@@" )
-                if html_position != -1:
-                    output = output[html_position + 9:]
-                    stream_content = {'execution_count': self.execution_count,
-                                      'source' : "polymake",
-                                      'data': { 'text/html': output},
-                                      'metadata': dict() }
-                    self.send_response( self.iopub_socket, 'display_data', stream_content )
-                elif jpeg_position != -1:
-                    output = output[jpeg_position + 9:]
-                    stream_content = { 'source' : 'singular',
-                                           'data': { 'image/jpeg': output },
-                                           'metadata': { 'image/jpeg' : { 'width': 400, 'height': 400 } } } ##FIXME: Metadata
-                    self.send_response(self.iopub_socket, 'display_data', stream_content)
-                elif output != 0:
-                    stream_content = {'execution_count': self.execution_count, 'data': { 'text/plain': output } }
-                    self.send_response( self.iopub_socket, 'execute_result', stream_content )
+        try:
+            self.polymakewrapper.sendline( code_to_execute )
+            self.polymakewrapper.expect( 'print "===endofoutput===";' )
+            self.polymakewrapper.expect( "===endofoutput===" )
+            output = self.polymakewrapper.before.strip().rstrip()
+        except KeyboardInterrupt:
+            self.polymakewrapper.child.sendintr()
+            self.polymakewrapper.sendline( 'print "===endofoutput===";' )
+            interrupted = True
+            self.polymakewrapper.expect( "===endofoutput===" )
+            self.polymakewrapper.expect( "===endofoutput===" )
+        except EOF:
+            output = self.polymakewrapper.before + 'Restarting polymake'
+            self._start_polymake()
+        if not silent:
+            html_position = output.find( '<!--' )
+            if html_position != -1:
+                output = output[html_position:]
+                output = output.replace( '{ width: 100%; height: 100% }', '{ width: 50%; height: 50% }' )
+                stream_content = {'execution_count': self.execution_count,
+                                  'source' : "polymake",
+                                  'data': { 'text/html': output},
+                                  'metadata': dict() }
+                self.send_response( self.iopub_socket, 'display_data', stream_content )
+            elif len(output) != 0:
+                stream_content = {'execution_count': self.execution_count, 'data': { 'text/plain': output } }
+                self.send_response( self.iopub_socket, 'execute_result', stream_content )
         
         if interrupted:
             return {'status': 'abort', 'execution_count': self.execution_count}
@@ -129,14 +122,11 @@ class polymakeKernel(Kernel):
         completion = []
         code = re.sub( "\)$", "", code)
         code = repr(code)
-        code_line = 'print jupyter_tab_completion(' + code + ');  #polymake_jupyter_comment'
+        code_line = 'print jupyter_tab_completion(' + code + '); ' + 'print "===endofoutput===";'
         self.polymakewrapper.sendline( code_line )
-        self.polymakewrapper.expect( [ "[ \r]*#[ \r]*p[ \r]*o[ \r]*l[ \r]*y[ \r]*m[ \r]*a[ \r]*k[ \r]*e[ \r]*_[ \r]*j[ \r]*u[ \r]*p[ \r]*y[ \r]*t[ \r]*e[ \r]*r[ \r]*_[ \r]*c[ \r]*o[ \r]*m[ \r]*m[ \r]*e[ \r]*n[ \r]*t" ] )
-        self.polymakewrapper.expect( self.polymake_app_list )
-        output_tmp = self.polymakewrapper.before
-        output_tmp = re.sub( "^\r\n", "", output_tmp )
-        output_tmp = re.sub( "\r\x1b\[A\r\n", "", output_tmp )
-        output = re.sub( "\r\n\x1b\[1m", "", output_tmp )
+        self.polymakewrapper.expect( 'print "===endofoutput===";' )
+        self.polymakewrapper.expect( "===endofoutput===" )
+        output = self.polymakewrapper.before
         completion = output.split("###")
         completion_length = completion.pop(0)
         return (completion_length,completion)
