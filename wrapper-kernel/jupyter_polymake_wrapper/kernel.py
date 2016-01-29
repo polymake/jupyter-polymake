@@ -102,7 +102,20 @@ class polymakeKernel(Kernel):
             self.polymakewrapper.expect( "##polymake_jupyter_start")
         finally:
             signal.signal(signal.SIGINT, sig)
-
+    
+    def _run_polymake_command( self, code ):
+        self.polymakewrapper.sendline( code.rstrip() + '; ' + 'print "===endofoutput===";' )
+        self.polymakewrapper.expect( 'print "===endofoutput===";' )
+        error_number = self.polymakewrapper.expect( [ "ERROR", "===endofoutput===" ] )
+        output = self.polymakewrapper.before.strip().rstrip()
+        if error_number == 0:
+            self.polymakewrapper.sendline( 'print "===endofoutput===";' )
+            self.polymakewrapper.expect( 'print "===endofoutput===";' )
+            output = 'Error' + self.polymakewrapper.before
+            self.polymakewrapper.expect( "===endofoutput===" )
+            return False,output
+        return True,output
+    
     def _process_python( self, code ):
         if code.find( "@python" ) == -1 and code.find( "@widget" ) == -1:
             return False
@@ -122,29 +135,17 @@ class polymakeKernel(Kernel):
             return default_return
         
         interrupted = False
-        code_to_execute=code.rstrip() + '; ' + 'print "===endofoutput===";'
+        code = code.rstrip()
         
         #stream_content = {'execution_count': self.execution_count, 'data': { 'text/plain': "Code:\n" + code_to_execute } }
         #self.send_response( self.iopub_socket, 'execute_result', stream_content )
         
         try:
-            was_error_at_exec = False
-            self.polymakewrapper.sendline( code_to_execute )
-            self.polymakewrapper.expect( 'print "===endofoutput===";' )
-            error_number = self.polymakewrapper.expect( [ "ERROR", "===endofoutput===" ] )
-            output = self.polymakewrapper.before.strip().rstrip()
-            if error_number == 0:
-                self.polymakewrapper.sendline( 'print "===endofoutput===";' )
-                output = self.polymakewrapper.before
-                self.polymakewrapper.expect( 'print "===endofoutput===";' )
-                self.polymakewrapper.expect( "===endofoutput===" )
-                was_error_at_exec = True
+            was_error_at_exec, output = self._run_polymake_command( code )
         except KeyboardInterrupt:
             self.polymakewrapper.child.sendintr()
-            self.polymakewrapper.sendline( 'print "===endofoutput===";' )
+            self._run_polymake_command( '' )
             interrupted = True
-            self.polymakewrapper.expect( "===endofoutput===" )
-            self.polymakewrapper.expect( "===endofoutput===" )
         except EOF:
             output = self.polymakewrapper.before + 'Restarting polymake'
             self._start_polymake()
@@ -190,11 +191,8 @@ class polymakeKernel(Kernel):
         completion = []
         code = re.sub( "\)$", "", code)
         code = repr(code)
-        code_line = 'print Jupyter::tab_completion(' + code + '); ' + 'print "===endofoutput===";'
-        self.polymakewrapper.sendline( code_line )
-        self.polymakewrapper.expect( 'print "===endofoutput===";' )
-        self.polymakewrapper.expect( "===endofoutput===" )
-        output = self.polymakewrapper.before.strip().rstrip()
+        code_line = 'print Jupyter::tab_completion(' + code + ');'
+        error, output = self._run_polymake_command( code_line )
         completion = output.split("###")
         completion_length = completion.pop(0)
         return (completion_length,completion)
@@ -211,23 +209,15 @@ class polymakeKernel(Kernel):
 
     def do_is_complete( self, code ):
         new_code = 'if(0){ ' + code + ' } ' + 'print "===endofoutput===";'
-        self.polymakewrapper.sendline( new_code )
-        self.polymakewrapper.expect( 'print "===endofoutput===";' )
-        return_value=self.polymakewrapper.expect( [ 'Error', '===endofoutput===' ] )
-        if return_value == 0:
-            self.polymakewrapper.sendline( 'print "===endofoutput===";' )
-            self.polymakewrapper.expect( 'print "===endofoutput===";' )
-            self.polymakewrapper.expect( '===endofoutput===' )
+        return_value, output = self._run_polymake_command( new_code )
+        if return_value == False:
             return {'status' : 'incomplete', 'indent': '' }
         else:
             return {'status' : 'complete' }
 
     def do_inspect( self, code, cursor_pos, detail_level=0 ):
         new_code = 'Jupyter::context_help( "' + code + '", ' + str(detail_level) + ' ); print "===endofoutput===";'
-        self.polymakewrapper.sendline( new_code )
-        self.polymakewrapper.expect( 'print "===endofoutput===";' )
-        self.polymakewrapper.expect( '===endofoutput===' )
-        output = self.polymakewrapper.before.strip().rstrip()
+        error, output = self._run_polymake_command( new_code )
         if output == '':
             return {'status': 'ok', 'data': {}, 'metadata': {}, 'found': False}
         else:
