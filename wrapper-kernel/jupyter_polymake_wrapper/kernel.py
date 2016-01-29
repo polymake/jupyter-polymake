@@ -168,9 +168,9 @@ class polymakeKernel(Kernel):
 
     def do_shutdown(self, restart):
         
-        self.polymakewrapper.terminate(True)
+        self.polymakewrapper.terminate(force=True)
         if restart:
-            _start_polymake()
+            self._start_polymake()
 
 
 ### basic code completion for polymake
@@ -198,5 +198,3 @@ class polymakeKernel(Kernel):
         return {'matches':  completion, 'cursor_start': cur_start,
                 'cursor_end': cursor_pos, 'metadata': dict(),
                 'status': 'ok'}
-
-
