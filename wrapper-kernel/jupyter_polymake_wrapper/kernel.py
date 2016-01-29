@@ -53,6 +53,11 @@ class polymakeKernel(Kernel):
     implementation = 'jupyter_polymake_wrapper'
     implementation_version = __version__
 
+    help_links = [ { 'text': "Polymake website", 'url': "http://polymake.org/" },
+                   { 'text': "Polymake documentation", 'url': "https://polymake.org/doku.php/documentation" },
+                   { 'text': "Polymake tutorial", 'url': "https://polymake.org/doku.php/tutorial/start" },
+                   { 'text': "Polymake reference", 'url': "https://polymake.org/release_docs/3.0/" } ]
+
     def _replace_get_ipython(self):
         new_kernel = own_ipython(self)
         global kernel_object_for_ipython
