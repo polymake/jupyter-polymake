@@ -33,8 +33,8 @@ def install_my_kernel_spec(user=True):
         os.mkdir( td + "controls", mode=755 )
         for i in filenames_control:
             file_copy(path_of_file + "controls/" + i, td + "controls" )
-        #file_copy(path_of_file + "logo-32x32.png", td )
-        #file_copy(path_of_file + "logo-64x64.png", td )
+        file_copy(path_of_file + "logo-32x32.png", td )
+        file_copy(path_of_file + "logo-64x64.png", td )
         print('Installing IPython kernel spec')
         install_kernel_spec(td, 'polymake', user=user, replace=True)
 

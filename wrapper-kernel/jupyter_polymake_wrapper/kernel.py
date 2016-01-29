@@ -11,6 +11,35 @@ import re
 import signal
 import urllib
 
+kernel_object_for_ipython = None  
+
+def _mock_get_ipython():
+    global kernel_object_for_ipython
+    return kernel_object_for_ipython
+
+try:
+    import IPython
+    ipython_loaded = True
+except ImportError:
+    ipython_loaded = False
+
+if ipython_loaded:
+    ## Rewrite this incredibly stupid get_ipython method
+    get_ipython = _mock_get_ipython
+    sys.modules['IPython'].get_ipython = _mock_get_ipython
+    sys.modules['IPython'].core.getipython.get_ipython = _mock_get_ipython
+
+try:
+    from ipywidgets import *
+    ipywidgets_extension_loaded = True
+except ImportError:
+    ipywidgets_extension_loaded = False
+
+class own_ipython:
+    kernel = None
+    def __init__(self, kernel = None ):
+        self.kernel = kernel
+
 __version__ = '0.3'
 
 version_pat = re.compile(r'version (\d+(\.\d+)+)')
@@ -18,8 +47,11 @@ version_pat = re.compile(r'version (\d+(\.\d+)+)')
 class polymakeKernel(Kernel):
     implementation = 'jupyter_polymake_wrapper'
     implementation_version = __version__
-    
-    polymake_normal_app_nr = 10
+
+    def _replace_get_ipython(self):
+        new_kernel = own_ipython(self)
+        global kernel_object_for_ipython
+        kernel_object_for_ipython = new_kernel
 
     @property
     def language_version(self):
@@ -41,6 +73,14 @@ class polymakeKernel(Kernel):
 
     def __init__(self, **kwargs):
         Kernel.__init__(self, **kwargs)
+        self._replace_get_ipython()
+        self.comm_manager = CommManager(shell=None, parent=self,
+                                        kernel=self)
+        self.shell_handlers['comm_open'] = self.comm_manager.comm_open
+        self.shell_handlers['comm_msg'] = self.comm_manager.comm_msg
+        self.shell_handlers['comm_close'] = self.comm_manager.comm_close
+        if ipywidgets_extension_loaded:
+            self.comm_manager.register_target('ipython.widget', Widget.handle_comm_opened)
         self._start_polymake()
 
     def _start_polymake(self):
@@ -48,17 +88,31 @@ class polymakeKernel(Kernel):
         try:
             polymake_run_command = pexpect.which( "polymake" )
             self.polymakewrapper = pexpect.spawnu( polymake_run_command + " -" )
+            self.polymakewrapper.sendline( 'prefer "threejs";' )
+            self.polymakewrapper.sendline( '$is_used_in_jupyter = 1;' )
             self.polymakewrapper.sendline( "##polymake_jupyter_start" )
             self.polymakewrapper.expect( "##polymake_jupyter_start")
         finally:
             signal.signal(signal.SIGINT, sig)
 
+    def _process_python( self, code ):
+        if code.find( "@python" ) == -1 and code.find( "@widget" ) == -1:
+            return False
+        exec(code[7:],globals())
+        return True
+
     def do_execute(self, code, silent, store_history=True,
                    user_expressions=None, allow_stdin=False):
+        
+        default_return = {'status': 'ok', 'execution_count': self.execution_count,
+                          'payload': [], 'user_expressions': {}}
+        
         if not code.strip():
-            return {'status': 'ok', 'execution_count': self.execution_count,
-                    'payload': [], 'user_expressions': {}}
-
+            return default_return
+        
+        if self._process_python( code ):
+            return default_return
+        
         interrupted = False
         code_to_execute=code.rstrip() + '; ' + 'print "===endofoutput===";'
         
@@ -84,6 +138,8 @@ class polymakeKernel(Kernel):
             if html_position != -1:
                 output = output[html_position:]
                 output = output.replace( '{ width: 100%; height: 100% }', '{ width: 50%; height: 50% }' )
+                stream_content = {'execution_count': self.execution_count, 'data': { 'text/plain': output } }
+                self.send_response( self.iopub_socket, 'execute_result', stream_content )
                 stream_content = {'execution_count': self.execution_count,
                                   'source' : "polymake",
                                   'data': { 'text/html': output},
@@ -107,7 +163,7 @@ class polymakeKernel(Kernel):
         else:
             return {'status': 'ok', 'execution_count': self.execution_count,
                     'payload': [], 'user_expressions': {}}
-    
+
     def do_shutdown(self, restart):
         
         self.polymakewrapper.terminate(True)
