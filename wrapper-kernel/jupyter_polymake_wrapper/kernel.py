@@ -128,10 +128,17 @@ class polymakeKernel(Kernel):
         #self.send_response( self.iopub_socket, 'execute_result', stream_content )
         
         try:
+            was_error_at_exec = False
             self.polymakewrapper.sendline( code_to_execute )
             self.polymakewrapper.expect( 'print "===endofoutput===";' )
-            self.polymakewrapper.expect( "===endofoutput===" )
+            error_number = self.polymakewrapper.expect( [ "ERROR", "===endofoutput===" ] )
             output = self.polymakewrapper.before.strip().rstrip()
+            if error_number == 0:
+                self.polymakewrapper.sendline( 'print "===endofoutput===";' )
+                output = self.polymakewrapper.before
+                self.polymakewrapper.expect( 'print "===endofoutput===";' )
+                self.polymakewrapper.expect( "===endofoutput===" )
+                was_error_at_exec = True
         except KeyboardInterrupt:
             self.polymakewrapper.child.sendintr()
             self.polymakewrapper.sendline( 'print "===endofoutput===";' )
@@ -162,7 +169,7 @@ class polymakeKernel(Kernel):
         except Exception:
             exitcode = 1
         
-        if exitcode:
+        if exitcode or was_error_at_exec:
             return {'status': 'error', 'execution_count': self.execution_count,
                     'ename': '', 'evalue': str(exitcode), 'traceback': []}
         else:
