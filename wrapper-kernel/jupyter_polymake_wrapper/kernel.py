@@ -11,7 +11,12 @@ import re
 import signal
 import urllib
 
-kernel_object_for_ipython = None  
+import sys
+
+from ipykernel.comm import Comm
+from ipykernel.comm import CommManager
+
+kernel_object_for_ipython = None
 
 def _mock_get_ipython():
     global kernel_object_for_ipython
@@ -137,9 +142,6 @@ class polymakeKernel(Kernel):
             html_position = output.find( '<!--' )
             if html_position != -1:
                 output = output[html_position:]
-                output = output.replace( '{ width: 100%; height: 100% }', '{ width: 50%; height: 50% }' )
-                stream_content = {'execution_count': self.execution_count, 'data': { 'text/plain': output } }
-                self.send_response( self.iopub_socket, 'execute_result', stream_content )
                 stream_content = {'execution_count': self.execution_count,
                                   'source' : "polymake",
                                   'data': { 'text/html': output},
