@@ -213,7 +213,7 @@ class polymakeKernel(Kernel):
                 'status': 'ok'}
 
     def do_is_complete( self, code ):
-        new_code = 'if(0){ ' + code + ' } ' + 'print "===endofoutput===";'
+        new_code = 'if(0){ ' + code + ' }'
         return_value, output = self._run_polymake_command( new_code )
         if return_value == False:
             return {'status' : 'incomplete', 'indent': '' }
@@ -221,7 +221,7 @@ class polymakeKernel(Kernel):
             return {'status' : 'complete' }
 
     def do_inspect( self, code, cursor_pos, detail_level=0 ):
-        new_code = 'Jupyter::context_help( "' + code + '", ' + str(detail_level) + ' ); print "===endofoutput===";'
+        new_code = 'Jupyter::context_help( "' + code + '", ' + str(detail_level) + ' );'
         error, output = self._run_polymake_command( new_code )
         if output == '':
             return {'status': 'ok', 'data': {}, 'metadata': {}, 'found': False}
