@@ -127,7 +127,7 @@ class polymakeKernel(Kernel):
     def _process_python( self, code ):
         if code.find( "@python" ) == -1 and code.find( "@widget" ) == -1:
             return False
-        exec(code[7:],globals())
+        exec(code[7:],globals(),locals())
         return True
 
     def do_execute(self, code, silent, store_history=True,
@@ -162,15 +162,21 @@ class polymakeKernel(Kernel):
             return {'status': 'error', 'execution_count': self.execution_count,
                     'ename': 'PolymakeRunException', 'evalue': output, 'traceback': []}
         if not silent:
-            html_position = output.find( '<!--' )
-            if html_position != -1:
-                output = output[html_position:]
+            while output.find( '.@@HTML@@' ) != -1:
+                html_position = output.find( '.@@HTML@@' )
+                html_end_position = output.find( '.@@ENDHTML@@' )
+                before_html = output[:html_position-1].rstrip()
+                output_html = output[html_position+9:html_end_position-1].strip().rstrip()
+                output = output[html_end_position+12:].strip()
+                if before_html != '':
+                    stream_content = {'execution_count': self.execution_count, 'data': { 'text/plain': before_html } }
+                    self.send_response( self.iopub_socket, 'execute_result', stream_content )
                 stream_content = {'execution_count': self.execution_count,
                                   'source' : "polymake",
-                                  'data': { 'text/html': output},
+                                  'data': { 'text/html': output_html},
                                   'metadata': dict() }
                 self.send_response( self.iopub_socket, 'display_data', stream_content )
-            elif len(output) != 0:
+            if len(output) != 0:
                 stream_content = {'execution_count': self.execution_count, 'data': { 'text/plain': output } }
                 self.send_response( self.iopub_socket, 'execute_result', stream_content )
         
@@ -222,7 +228,7 @@ class polymakeKernel(Kernel):
         return {'status' : 'complete' }
 
     def do_inspect( self, code, cursor_pos, detail_level=0 ):
-        new_code = 'print Jupyter::context_help( q#' + code + '#, ' + str(detail_level*2) + ' );'
+        new_code = 'print Jupyter::context_help( q#' + code + '#, ' + str(detail_level) + ' );'
         try:
             output = self._run_polymake_command( new_code )
         except PolymakeRunException:
