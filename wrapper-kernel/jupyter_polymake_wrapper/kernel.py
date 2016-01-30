@@ -80,9 +80,9 @@ class polymakeKernel(Kernel):
         return self._banner
 
     language_info = {'name': 'polymake',
-                     'codemirror_mode': 'polymake', # FIXME: Maybe use pearl?
+                     'codemirror_mode': 'perl', #
                      'mimetype': 'text/x-polymake', 
-                     'file_extension': '.polymake'} # FIXME: Is this even real?
+                     'file_extension': '.pm'} # FIXME: Is this even real?
 
     def __init__(self, **kwargs):
         Kernel.__init__(self, **kwargs)
@@ -203,7 +203,7 @@ class polymakeKernel(Kernel):
         completion_length = completion.pop(0)
         return (completion_length,completion)
 
-    # This is a rather poor completion at the moment
+    
     def do_complete(self, code, cursor_pos):
         
         completion_length, completion = self.code_completion(code[0:cursor_pos])
