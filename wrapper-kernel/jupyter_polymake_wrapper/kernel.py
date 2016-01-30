@@ -49,6 +49,9 @@ __version__ = '0.3'
 
 version_pat = re.compile(r'version (\d+(\.\d+)+)')
 
+class PolymakeRunException(Exception):
+    pass
+
 class polymakeKernel(Kernel):
     implementation = 'jupyter_polymake_wrapper'
     implementation_version = __version__
@@ -99,12 +102,12 @@ class polymakeKernel(Kernel):
             polymake_run_command = pexpect.which( "polymake" )
             self.polymakewrapper = pexpect.spawnu( polymake_run_command + " -" )
             # set jupyter enviroment in polymake
-            self.polymakewrapper.sendline( 'prefer "threejs";' )
-            self.polymakewrapper.sendline( 'include "common::jupyter.rules";' )
-            self.polymakewrapper.sendline( '$common::is_used_in_jupyter = 1;' )
-            self.polymakewrapper.sendline( "##polymake_jupyter_start" )
-            
-            self.polymakewrapper.expect( "##polymake_jupyter_start")
+            try:
+                self._run_polymake_command( 'prefer "threejs";' )
+                self._run_polymake_command( 'include "common::jupyter.rules";' )
+                self._run_polymake_command( '$common::is_used_in_jupyter = 1;' )
+            except PolymakeRunException:
+                return False
         finally:
             signal.signal(signal.SIGINT, sig)
     
@@ -118,8 +121,8 @@ class polymakeKernel(Kernel):
             self.polymakewrapper.expect( 'print "===endofoutput===";' )
             output = 'Error' + self.polymakewrapper.before
             self.polymakewrapper.expect( "===endofoutput===" )
-            return False,output
-        return True,output
+            raise PolymakeRunException( output )
+        return output
     
     def _process_python( self, code ):
         if code.find( "@python" ) == -1 and code.find( "@widget" ) == -1:
@@ -146,7 +149,7 @@ class polymakeKernel(Kernel):
         #self.send_response( self.iopub_socket, 'execute_result', stream_content )
         
         try:
-            was_error_at_exec, output = self._run_polymake_command( code )
+            output = self._run_polymake_command( code )
         except KeyboardInterrupt:
             self.polymakewrapper.child.sendintr()
             self._run_polymake_command( '' )
@@ -154,6 +157,10 @@ class polymakeKernel(Kernel):
         except EOF:
             output = self.polymakewrapper.before + 'Restarting polymake'
             self._start_polymake()
+        except PolymakeRunException as exception:
+            output = exception.args[0]
+            return {'status': 'error', 'execution_count': self.execution_count,
+                    'ename': 'PolymakeRunException', 'evalue': output, 'traceback': []}
         if not silent:
             html_position = output.find( '<!--' )
             if html_position != -1:
@@ -170,17 +177,8 @@ class polymakeKernel(Kernel):
         if interrupted:
             return {'status': 'abort', 'execution_count': self.execution_count}
 
-        try:
-            exitcode = 0
-        except Exception:
-            exitcode = 1
-        
-        if exitcode or was_error_at_exec:
-            return {'status': 'error', 'execution_count': self.execution_count,
-                    'ename': '', 'evalue': str(exitcode), 'traceback': []}
-        else:
-            return {'status': 'ok', 'execution_count': self.execution_count,
-                    'payload': [], 'user_expressions': {}}
+        return {'status': 'ok', 'execution_count': self.execution_count,
+                'payload': [], 'user_expressions': {}}
 
     def do_shutdown(self, restart):
         
@@ -197,7 +195,10 @@ class polymakeKernel(Kernel):
         code = re.sub( "\)$", "", code)
         code = repr(code)
         code_line = 'print Jupyter::tab_completion(' + code + ');'
-        error, output = self._run_polymake_command( code_line )
+        try:
+            output = self._run_polymake_command( code_line )
+        except PolymakeRunException:
+            return (0,[])
         completion = output.split("###")
         completion_length = completion.pop(0)
         return (completion_length,completion)
@@ -214,15 +215,18 @@ class polymakeKernel(Kernel):
 
     def do_is_complete( self, code ):
         new_code = 'if(0){ ' + code + ' }'
-        return_value, output = self._run_polymake_command( new_code )
-        if return_value == False:
+        try:
+            self._run_polymake_command( new_code )
+        except PolymakeRunException:
             return {'status' : 'incomplete', 'indent': '' }
-        else:
-            return {'status' : 'complete' }
+        return {'status' : 'complete' }
 
     def do_inspect( self, code, cursor_pos, detail_level=0 ):
-        new_code = 'Jupyter::context_help( "' + code + '", ' + str(detail_level) + ' );'
-        error, output = self._run_polymake_command( new_code )
+        new_code = 'print Jupyter::context_help( q#' + code + '#, ' + str(detail_level*2) + ' );'
+        try:
+            output = self._run_polymake_command( new_code )
+        except PolymakeRunException:
+            return {'status': 'ok', 'data': {}, 'metadata': {}, 'found': False}
         if output == '':
             return {'status': 'ok', 'data': {}, 'metadata': {}, 'found': False}
         else:
