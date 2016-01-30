@@ -165,7 +165,10 @@ class polymakeKernel(Kernel):
             while output.find( '.@@HTML@@' ) != -1:
                 html_position = output.find( '.@@HTML@@' )
                 html_end_position = output.find( '.@@ENDHTML@@' )
-                before_html = output[:html_position-1].rstrip()
+                if html_position > 0:
+                    before_html = output[:html_position-1].rstrip()
+                else:
+                    before_html = ''
                 output_html = output[html_position+9:html_end_position-1].strip().rstrip()
                 output = output[html_end_position+12:].strip()
                 if before_html != '':
