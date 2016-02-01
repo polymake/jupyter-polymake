@@ -231,7 +231,7 @@ class polymakeKernel(Kernel):
         return {'status' : 'complete' }
 
     def do_inspect( self, code, cursor_pos, detail_level=0 ):
-        new_code = 'print Jupyter::context_help( q#' + code + '#, ' + str(detail_level) + ' );'
+        new_code = 'print Jupyter::context_help( q#' + code + '#, 1 );'
         try:
             output = self._run_polymake_command( new_code )
         except PolymakeRunException:
