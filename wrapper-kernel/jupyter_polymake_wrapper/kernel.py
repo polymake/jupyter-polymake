@@ -209,7 +209,10 @@ class polymakeKernel(Kernel):
         except PolymakeRunException:
             return (0,[])
         completion = output.split("###")
-        completion_length = completion.pop(0)
+        if ( len(completion) > 1 ) :
+            completion_length = completion.pop(0)
+        else :
+            completion_length = 0
         return (completion_length,completion)
 
     
