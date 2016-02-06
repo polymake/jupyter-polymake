@@ -1,6 +1,5 @@
 from ipykernel.kernelbase import Kernel
 import pexpect
-from pexpect import replwrap, EOF, which
 
 from subprocess import check_output
 from os import unlink, path
@@ -154,7 +153,7 @@ class polymakeKernel(Kernel):
             self.polymakewrapper.child.sendintr()
             self._run_polymake_command( '' )
             interrupted = True
-        except EOF:
+        except pexpect.EOF:
             output = self.polymakewrapper.before + 'Restarting polymake'
             self._start_polymake()
         except PolymakeRunException as exception:
