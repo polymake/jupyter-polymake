@@ -36,9 +36,6 @@ def install_my_kernel_spec(user=True):
             file_copy(path_of_file + "controls/" + i, td + "/controls" )
         file_copy(path_of_file + "logo-32x32.png", td )
         file_copy(path_of_file + "logo-64x64.png", td )
-        #print(os.listdir(td))
-        #print(os.listdir(td + "/controls"))
-        #print(os.listdir(td + "/renderers"))
         print('Installing jupyter kernel spec for poiymake')
         install_kernel_spec(td, 'polymake', user=user, replace=True)
 
