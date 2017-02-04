@@ -24,7 +24,7 @@ def install_my_kernel_spec(user=True):
             json.dump(kernel_json, f, sort_keys=True)
         path_of_file = dirname( abspath(__file__) ) + "/jupyter_kernel_polymake/resources/"
         filenames=[ "Detector.js", "three.js", "kernel.js"  ]
-        filenames_renderer=[ "CanvasRenderer.js", "Projector.js" ]
+        filenames_renderer=[ "CanvasRenderer.js", "Projector.js", "SVGRenderer.js" ]
         filenames_control=[ "TrackballControls.js" ]
         for i in filenames:
             file_copy(path_of_file + i, td )
@@ -62,6 +62,7 @@ setup( name="jupyter_kernel_polymake"
                                                  "resources/three.js",
                                                  "resources/renderers/CanvasRenderer.js",
                                                  "resources/renderers/Projector.js",
+                                                 "resources/renderers/SVGRenderer.js",
                                                  "resources/controls/TrackballControls.js" ]}
      ,
      )
