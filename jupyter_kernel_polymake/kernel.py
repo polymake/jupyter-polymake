@@ -81,7 +81,7 @@ class polymakeKernel(Kernel):
     language_info = {'name': 'polymake',
                      'codemirror_mode': 'perl', #
                      'mimetype': 'text/x-polymake', 
-                     'file_extension': '.pm'} # FIXME: Is this even real?
+                     'file_extension': '.pl'} # FIXME: Is this even real?
 
     def __init__(self, **kwargs):
         Kernel.__init__(self, **kwargs)
@@ -99,6 +99,7 @@ class polymakeKernel(Kernel):
         sig = signal.signal(signal.SIGINT, signal.SIG_DFL)
         try:
             polymake_run_command = pexpect.which( "polymake" )
+            #@@@replace_polymake_run_command@@@@
             self.polymakewrapper = pexpect.spawnu( polymake_run_command + " -" )
             # set jupyter enviroment in polymake
             try:

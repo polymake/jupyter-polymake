@@ -13,7 +13,7 @@ from shutil import copy as file_copy
 kernel_json = {"argv":[sys.executable,"-m","jupyter_kernel_polymake", "-f", "{connection_file}"],
  "display_name":"polymake",
  "language":"polymake",
- "codemirror_mode":"polymake", # note that this does not exist yet
+ "codemirror_mode":"perl", # note that this does not exist yet
  "env":{"PS1": "$"}
 }
 
@@ -28,14 +28,17 @@ def install_my_kernel_spec(user=True):
         filenames_control=[ "TrackballControls.js" ]
         for i in filenames:
             file_copy(path_of_file + i, td )
-        os.mkdir( td + "renderers", mode=755 )
+        os.mkdir( td + "/renderers", mode=755 )
         for i in filenames_renderer:
-            file_copy(path_of_file + "renderers/" + i, td + "renderers" )
-        os.mkdir( td + "controls", mode=755 )
+            file_copy(path_of_file + "renderers/" + i, td + "/renderers" )
+        os.mkdir( td + "/controls", mode=755 )
         for i in filenames_control:
-            file_copy(path_of_file + "controls/" + i, td + "controls" )
+            file_copy(path_of_file + "controls/" + i, td + "/controls" )
         file_copy(path_of_file + "logo-32x32.png", td )
         file_copy(path_of_file + "logo-64x64.png", td )
+        #print(os.listdir(td))
+        #print(os.listdir(td + "/controls"))
+        #print(os.listdir(td + "/renderers"))
         print('Installing jupyter kernel spec for poiymake')
         install_kernel_spec(td, 'polymake', user=user, replace=True)
 
