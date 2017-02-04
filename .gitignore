@@ -1,4 +1,6 @@
+MANIFEST
+build/*
 *.ipynb
 wrapper-kernel/build/*
 *__pychache__
-wrapper-kernel/jupyter_polymake_wrapper/__pycache__/
+jupyter_kernel_polymake/__pycache__/

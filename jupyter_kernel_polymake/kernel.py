@@ -75,7 +75,7 @@ class polymakeKernel(Kernel):
     @property
     def banner(self):
         if self._banner is None:
-            self._banner = "Polymake Jupyter kernel"
+            self._banner = "Jupyter kernel for polymake"
         return self._banner
 
     language_info = {'name': 'polymake',
