@@ -171,7 +171,7 @@ class polymakeKernel(Kernel):
                     before_html = ''
                 output_html = output[html_position+9:html_end_position-1].strip().rstrip()
                 output = output[html_end_position+12:].strip()
-                output_html = output_html.replace( "<script>", "<script src='js/three.polymake.js'></script><script>" )
+                #output_html = output_html.replace( "<script>", "<script src='jupyter_kernel_polymake/resources/three.js'></script><script>" )
                 if before_html != '':
                     stream_content = {'execution_count': self.execution_count, 'data': { 'text/plain': before_html } }
                     self.send_response( self.iopub_socket, 'execute_result', stream_content )
