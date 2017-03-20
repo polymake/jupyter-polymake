@@ -1,5 +1,5 @@
-# jupyter-polymake
-###Jupyter kernels for polymake 
+# jupyter kernel polymake
+###Jupyter kernel for polymake 
 
 This is the current beta version of a jupyter kernel for polymake. It uses the `ipykernel` and
 `pexpect` python module, along with some sugar.
@@ -12,7 +12,7 @@ and [Jupyter](http://jupyter.org). For most Linux and OS X versions, all the pac
 accessible via `pip`. For the usage of interactive widgets you also need the `ipywidgets` python module
 installed.
 
-Also, a recent version of [polymake](http://polymake.org) is required.
+Also, the latest version of [polymake](http://polymake.org) is required.
 
 ## polymake-kernel
 
@@ -22,7 +22,6 @@ be executed as the user who wants to use jupyter, e.g., your normal user.
 
 ```shell
     python setup.py install
-    python -m jupyter_polymake_wrapper.install
 ```
 
 If one of those commands fail, please make sure you have the proper rights. Also, check whether your
@@ -41,5 +40,4 @@ Note that this kernel assumes that `polymake` is in the `PATH`.
 
 ## Examples
 
-Please have a look at the Demo worksheet. If you want to have a look at an interactive widget,
-please have a look at SliderWidgetWithJohnsonSolids.
+Please have a look at the Demo worksheet.
