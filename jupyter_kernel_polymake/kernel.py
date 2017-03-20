@@ -177,7 +177,7 @@ class polymakeKernel(Kernel):
                     self.send_response( self.iopub_socket, 'execute_result', stream_content )
                 stream_content = {'execution_count': self.execution_count,
                                   'source' : "polymake",
-                                  'data': { 'text/html': output_html},
+                                  'data': { 'text/plain': "Sorry, threejs visualization is currently not available"},
                                   'metadata': dict() }
                 self.send_response( self.iopub_socket, 'display_data', stream_content )
             if len(output) != 0:
