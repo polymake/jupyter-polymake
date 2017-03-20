@@ -105,7 +105,7 @@ class polymakeKernel(Kernel):
             try:
                 self._run_polymake_command( 'prefer "threejs";' )
                 self._run_polymake_command( 'include "common::jupyter.rules";' )
-                #self._run_polymake_command( '$common::is_used_in_jupyter = 1;' )
+                self._run_polymake_command( '$common::is_used_in_jupyter = 1;' )
             except PolymakeRunException:
                 return False
         finally:
@@ -171,13 +171,12 @@ class polymakeKernel(Kernel):
                     before_html = ''
                 output_html = output[html_position+9:html_end_position-1].strip().rstrip()
                 output = output[html_end_position+12:].strip()
-                #output_html = output_html.replace( "<script>", "<script src='jupyter_kernel_polymake/resources/three.js'></script><script>" )
                 if before_html != '':
                     stream_content = {'execution_count': self.execution_count, 'data': { 'text/plain': before_html } }
                     self.send_response( self.iopub_socket, 'execute_result', stream_content )
                 stream_content = {'execution_count': self.execution_count,
                                   'source' : "polymake",
-                                  'data': { 'text/plain': "Sorry, threejs visualization is currently displayed in a different window"},
+                                  'data': { 'text/plain': "Sorry, threejs visualization is currently not available"},
                                   'metadata': dict() }
                 self.send_response( self.iopub_socket, 'display_data', stream_content )
             if len(output) != 0:

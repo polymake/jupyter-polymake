@@ -10,10 +10,6 @@ define(function(){
 		var completer = require("notebook/js/completer");
 		completer.Completer.reinvoke_re=/[%><0-9a-z._/\\:~-]/i;
         //console.log(completer.Completer.reinvoke_re);
-                define('three', ['./three.js'], function ( THREE ) {
-                window.THREE = THREE;
-                return THREE;
-                });
     }
 
     return {onload:onload}
