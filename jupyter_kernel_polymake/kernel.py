@@ -99,11 +99,12 @@ class polymakeKernel(Kernel):
         sig = signal.signal(signal.SIGINT, signal.SIG_DFL)
         try:
             polymake_run_command = pexpect.which( "polymake" )
-            #@@@replace_polymake_run_command@@@@
+            #___replace_polymake_run_command___
             self.polymakewrapper = pexpect.spawnu( polymake_run_command + " -" )
             # set jupyter enviroment in polymake
             try:
-                self._run_polymake_command( 'prefer "threejs";' )
+                #self._run_polymake_command( 'prefer "threejs";' )   NOTE: temporarily removed
+                self._run_polymake_command( 'prefer "svg";' )
                 self._run_polymake_command( 'include "common::jupyter.rules";' )
                 self._run_polymake_command( '$common::is_used_in_jupyter = 1;' )
             except PolymakeRunException:
@@ -176,7 +177,8 @@ class polymakeKernel(Kernel):
                     self.send_response( self.iopub_socket, 'execute_result', stream_content )
                 stream_content = {'execution_count': self.execution_count,
                                   'source' : "polymake",
-                                  'data': { 'text/plain': "Sorry, threejs visualization is currently not available"},
+                                  #'data': { 'text/html': "Sorry, threejs visualization is currently not available"},
+                                  'data': { 'text/html': output_html},
                                   'metadata': dict() }
                 self.send_response( self.iopub_socket, 'display_data', stream_content )
             if len(output) != 0:
