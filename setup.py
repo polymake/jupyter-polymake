@@ -39,7 +39,7 @@ if __name__ == '__main__':
 
 
 setup( name="jupyter_kernel_polymake"
-     , version="0.9"
+     , version="0.10"
      , description="A Jupyter kernel for polymake"
      , author="Sebastian Gutsche"
      , author_email="sebastian.gutsche@gmail.com"
