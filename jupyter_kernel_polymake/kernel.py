@@ -149,16 +149,16 @@ class polymakeKernel(Kernel):
         if not silent:
             if output[0] == True:
                 if output[1] != "":
-                    output = output[1]
-                    while output.find( '.@@HTML@@' ) != -1:
-                        html_position = output.find( '.@@HTML@@' )
-                        html_end_position = output.find( '.@@ENDHTML@@' )
+                    output_stdout = output[1]
+                    while output_stdout.find( '.@@HTML@@' ) != -1:
+                        html_position = output_stdout.find( '.@@HTML@@' )
+                        html_end_position = output_stdout.find( '.@@ENDHTML@@' )
                         if html_position > 0:
-                            before_html = output[:html_position-1].rstrip()
+                            before_html = output_stdout[:html_position-1].rstrip()
                         else:
                             before_html = ''
-                        output_html = output[html_position+9:html_end_position-1].strip().rstrip()
-                        output = output[html_end_position+12:].strip()
+                        output_html = output_stdout[html_position+9:html_end_position-1].strip().rstrip()
+                        output_stdout = output_stdout[html_end_position+12:].strip()
                         if before_html != '':
                             stream_content = {'execution_count': self.execution_count, 'data': { 'text/plain': before_html } }
                             self.send_response( self.iopub_socket, 'execute_result', stream_content )
@@ -168,22 +168,30 @@ class polymakeKernel(Kernel):
                                           'data': { 'text/html': output_html},
                                           'metadata': dict() }
                         self.send_response( self.iopub_socket, 'display_data', stream_content )
-                    if len(output) != 0:
-                        stream_content = {'execution_count': self.execution_count, 'data': { 'text/plain': output } }
+                    if len(output_stdout) != 0:
+                        stream_content = {'execution_count': self.execution_count, 'data': { 'text/plain': output_stdout } }
                         self.send_response( self.iopub_socket, 'execute_result', stream_content )
-                elif output[2] != "":
-                    stream_content = {'execution_count': self.execution_count, 'data': { 'text/plain': output[2] } }
+                    if output[2] != "":
+                        output_html = "<details>\n<summary>\n<pre><small>Click here for additional output</small></pre>\n</summary>\n<pre>\n"+output[2]+"</pre>\n</details>\n"
+                        stream_content = {'execution_count': self.execution_count,
+                                          'source' : "polymake",
+                                          #'data': { 'text/html': "Sorry, threejs visualization is currently not available"},
+                                          'data': { 'text/html': output_html},
+                                          'metadata': dict() }
+                        self.send_response( self.iopub_socket, 'display_data', stream_content )
+                elif output[3] != "":
+                    stream_content = {'execution_count': self.execution_count, 'data': { 'text/plain': output[3] } }
                     self.send_response( self.iopub_socket, 'execute_result', stream_content )
                     return {'status': 'error', 'execution_count': self.execution_count,
                             'ename': 'PolymakeRunException', 'evalue': output, 'traceback': []}
             elif output[0] == False:
-                if output[2] == "":
+                if output[3] == "":
                     stream_content = {'execution_count': self.execution_count, 'data': { 'text/plain': "Error: Incomplete Statement:\n" + code } }
                     self.send_response( self.iopub_socket, 'execute_result', stream_content )
                     return {'status': 'error', 'execution_count': self.execution_count,
                             'ename': 'IncompleteStatementError', 'evalue': output, 'traceback': []}
                 else:
-                    stream_content = {'execution_count': self.execution_count, 'data': { 'text/plain': output[2] } }
+                    stream_content = {'execution_count': self.execution_count, 'data': { 'text/plain': output[3] } }
                     self.send_response( self.iopub_socket, 'execute_result', stream_content )
                     return {'status': 'error', 'execution_count': self.execution_count,
                             'ename': 'PolymakeRunException', 'evalue': output, 'traceback': []}
