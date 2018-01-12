@@ -171,15 +171,15 @@ class polymakeKernel(Kernel):
                     if len(output_stdout) != 0:
                         stream_content = {'execution_count': self.execution_count, 'data': { 'text/plain': output_stdout } }
                         self.send_response( self.iopub_socket, 'execute_result', stream_content )
-                    if output[2] != "":
-                        output_html = "<details>\n<summary>\n<pre><small>Click here for additional output</small></pre>\n</summary>\n<pre>\n"+output[2]+"</pre>\n</details>\n"
-                        stream_content = {'execution_count': self.execution_count,
-                                          'source' : "polymake",
-                                          #'data': { 'text/html': "Sorry, threejs visualization is currently not available"},
-                                          'data': { 'text/html': output_html},
-                                          'metadata': dict() }
-                        self.send_response( self.iopub_socket, 'display_data', stream_content )
-                elif output[3] != "":
+                if output[2] != "":
+                    output_html = "<details>\n<summary>\n<pre><small>Click here for additional output</small></pre>\n</summary>\n<pre>\n"+output[2]+"</pre>\n</details>\n"
+                    stream_content = {'execution_count': self.execution_count,
+                                      'source' : "polymake",
+                                      #'data': { 'text/html': "Sorry, threejs visualization is currently not available"},
+                                      'data': { 'text/html': output_html},
+                                      'metadata': dict() }
+                    self.send_response( self.iopub_socket, 'display_data', stream_content )
+                if output[3] != "":
                     stream_content = {'execution_count': self.execution_count, 'data': { 'text/plain': output[3] } }
                     self.send_response( self.iopub_socket, 'execute_result', stream_content )
                     return {'status': 'error', 'execution_count': self.execution_count,
