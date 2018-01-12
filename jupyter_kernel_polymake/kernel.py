@@ -175,7 +175,6 @@ class polymakeKernel(Kernel):
                     output_html = "<details>\n<summary>\n<pre><small>Click here for additional output</small></pre>\n</summary>\n<pre>\n"+output[2]+"</pre>\n</details>\n"
                     stream_content = {'execution_count': self.execution_count,
                                       'source' : "polymake",
-                                      #'data': { 'text/html': "Sorry, threejs visualization is currently not available"},
                                       'data': { 'text/html': output_html},
                                       'metadata': dict() }
                     self.send_response( self.iopub_socket, 'display_data', stream_content )
