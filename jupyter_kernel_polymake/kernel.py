@@ -100,9 +100,7 @@ class polymakeKernel(Kernel):
     def _start_polymake(self):
         JuPyMake.InitializePolymake()
         try:
-            self._run_polymake_command( 'prefer "svg";' )
             self._run_polymake_command( 'include "common::jupyter.rules";' )
-            #self._run_polymake_command( '$common::is_used_in_jupyter = 1;' )
         except PolymakeRunException:
             return
         return
