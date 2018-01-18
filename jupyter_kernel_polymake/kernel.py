@@ -108,7 +108,7 @@ class polymakeKernel(Kernel):
     def _run_polymake_command( self, code ):
         try:
             output = JuPyMake.ExecuteCommand( code.strip()+"\n" )
-        except JuPyMakeError as exception:
+        except Exception as exception:
             raise PolymakeRunException(exception.args[0])
         return output
     
@@ -214,7 +214,7 @@ class polymakeKernel(Kernel):
     def do_complete(self, code, cursor_pos):
         try:
             completions = JuPyMake.GetCompletion(code[0:cursor_pos])
-        except JuPyMakeError:
+        except:
             completions = (0,"",[])
         completion_offset = completions[0]
         cur_start = cursor_pos - completion_offset
