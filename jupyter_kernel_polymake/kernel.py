@@ -101,6 +101,7 @@ class polymakeKernel(Kernel):
         JuPyMake.InitializePolymake()
         try:
             self._run_polymake_command( 'include "common::jupyter.rules";' )
+            self._run_polymake_command( 'require Polymake::Core::HelpAsHTML;' )
         except PolymakeRunException:
             return
         return
@@ -239,8 +240,14 @@ class polymakeKernel(Kernel):
         try:
             output = JuPyMake.GetContextHelp( input=code, position=cursor_pos, full=full )
         except PolymakeRunException:
-            return {'status': 'ok', 'data': {}, 'metadata': {}, 'found': False}
-        if output == '':
-            return {'status': 'ok', 'data': {}, 'metadata': {}, 'found': False}
-        else:
-            return {'status': 'ok', 'data': { 'text/plain': "\n".join(output) }, 'metadata': {}, 'found': True}
+            output = []
+        try:
+            output_html = JuPyMake.GetContextHelp( input=code, position=cursor_pos, full=full, html=True )
+        except PolymakeRunException:
+            output_html = []
+        output_data = { }
+        if output != []:
+            output_data['text/plain'] = "\n".join(output)
+        if output_html != []:
+            output_data['text/html'] = "\n".join(output_html)
+        return {'status': 'ok', 'data': output_data, 'metadata': {}, 'found': True}
